@@ -176,10 +176,14 @@ def create_config(task_id, model_path, model_name, model_type, expected_repo_nam
         config["output_dir"] = output_dir
 
         if model_type == "sdxl":
+            # Fallback to common SDXL base config (dim 32, conv) for unknown base models
+            default_sdxl_key = 235
+            style_key = network_config_style.get(model_name, default_sdxl_key)
+            person_key = network_config_person.get(model_name, default_sdxl_key)
             if is_style:
-                network_config = config_mapping[network_config_style[model_name]]
+                network_config = config_mapping.get(style_key, config_mapping[default_sdxl_key])
             else:
-                network_config = config_mapping[network_config_person[model_name]]
+                network_config = config_mapping.get(person_key, config_mapping[default_sdxl_key])
 
             config["network_dim"] = network_config["network_dim"]
             config["network_alpha"] = network_config["network_alpha"]
@@ -225,7 +229,7 @@ def run_training(model_type, config_path):
                 "--num_processes", "1",
                 "--num_machines", "1",
                 "--num_cpu_threads_per_process", "2",
-                f"/app/sd-scripts/{model_type}_train_network.py",
+                f"/app/sd-script/{model_type}_train_network.py",
                 "--config_file", config_path
             ]
     try:
